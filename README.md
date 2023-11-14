@@ -1,27 +1,27 @@
-# go-backend
+# Phishhook Backend Application
 
-backend server to support the phishhook android application
+Backend server to support the phishhook android application.
 
-# Docker
+## Docker
 
-here: https://www.docker.com/blog/developing-go-apps-docker/
-`docker build --rm -t phishhook:alpha .`
+To deploy locally to Docker, you can run `make rebuild` and check your local docker app for the container. It will expose the application on port `8080`.
 
-`docker run -d -p 8080:8081 --name phishhook-backend phishhook:alpha`
+## Tests
 
-# API Keys
-
-Hunter
-`phishhookxnGvHDpBDrQ8eynzXypw181R4PptZXfnpUZkx0r96Hy5DgcIudsmrogfoc4wf4ugwB9kakwxVxBYDTPVJCQ5bGKfVpRMtNLtDjIxgh8QVGBT4nC6mDUbQ2U`
-
-Kab
-`phishhook7A4t8BrNThTSeJZBZYwZ9OAb0HpkWldiVQcHF9cSNJk50vdD4VgZ7NJvXdALVXkElKv9rcvK91pCkPUMLBjlswxQLbK2IA7GHcGHFBexXX1xvdrNfbuk779`
-
-Lucas
-`phishhookRyJHCenIz97Q5LIDPmHhDyg9eddxaBO29omDuzM1D5BsDRKH5mo3j8pmBehoO2Roj0Z4zWuDHlNW4AJVrSnLZF6lUravmyje13YB1LBriXHxYlxLUDYeXmV`
-
-test
+### Locally
 
 ```
-curl -H "X-API-KEY: phishhookRyJHCenIz97Q5LIDPmHhDyg9eddxaBO29omDuzM1D5BsDRKH5mo3j8pmBehoO2Roj0Z4zWuDHlNW4AJVrSnLZF6lUravmyje13YB1LBriXHxYlxLUDYeXmV"  http://localhost:8081/albums
+curl -H "X-API-KEY: {API_KEY}"  http://localhost:8080/users
 ```
+
+### AWS
+
+```
+curl -H'X-API-KEY: {API_KEY}' http://ec2-18-224-251-242.us-east-2.compute.amazonaws.com:8080/users
+```
+
+## Deployment to ECS from ECR
+
+This repository is served to the outside world using the Elastic Container Service from Amazon AWS. To make changes and deploy them to ECS, first we must update our Elastic Container Registry image by running `make push`.
+
+Then, login to the AWS console, and update the Task Definition with the URI of the image. Save. Stop the currently running task and deploy the new Task Definition Revision. Once running, the container is updated!

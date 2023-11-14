@@ -1,4 +1,4 @@
-# specify the node base image with your desired version node:<version>
+# specify the node base image with your desired version
 FROM golang:1.21.3-bullseye
 
 # Set the working directory to /app
@@ -14,9 +14,9 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Copies your source code into the app directory
-COPY main.go .
+COPY . .
 
-RUN go build -o /phishhook-backend
+RUN GOOS=linux GOARCH=amd64 go build -o /phishhook-backend
 
 # Tells Docker which network port your container listens on
 EXPOSE 8080
