@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/phishhook/go-backend/internal/pkg/database/models"
@@ -11,13 +12,14 @@ type UserRepository interface {
 	AddNewUser(phoneNumber, username string) (int, error)
 	GetAllUsers() ([]models.User, error)
 	GetUserByPhoneNumber(phoneNumber string) (*models.User, error)
-	GetUserLinks(userId string) ([]models.Link, error)
 }
 
 type LinkRepository interface {
-	AddNewLink(url, isPhishing string) (int, error)
+	AddNewLink(userId int, url, isPhishing string) (int, error)
 	GetAllLinks() ([]models.Link, error)
-	GetLinkById(id string) (*models.Link, error)
+	GetLinksByUserId(userId string) ([]models.Link, error)
+	GetLinkByLinkId(id string) (*models.Link, error)
+	GetLinkByUrl(url string) (*models.Link, error)
 	DeleteLink(id string) (int, error)
 }
 
@@ -74,19 +76,6 @@ func GetUserByPhoneNumberHandler(userRepo UserRepository) gin.HandlerFunc {
 	}
 }
 
-func GetUserLinksHandler(userRepo UserRepository) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		userId := c.Param("user_id")
-		links, err := userRepo.GetUserLinks(userId)
-		if err != nil {
-			// handle error
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to gather links"})
-			return
-		}
-		c.IndentedJSON(http.StatusOK, links)
-	}
-}
-
 func AddNewLinkHandler(linkRepo LinkRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var link models.Link
@@ -96,12 +85,12 @@ func AddNewLinkHandler(linkRepo LinkRepository) gin.HandlerFunc {
 		}
 
 		// Check if the required fields are empty.
-		if link.Url == "" || link.IsPhishing == "" {
+		if link.UserId == 0 || link.Url == "" || link.IsPhishing == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Url and is_phishing are required"})
 			return
 		}
 
-		id, err := linkRepo.AddNewLink(link.Url, link.IsPhishing)
+		id, err := linkRepo.AddNewLink(link.UserId, link.Url, link.IsPhishing)
 		if err != nil {
 			// handle error
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add link"})
@@ -123,10 +112,41 @@ func GetAllLinksHandler(linkRepo LinkRepository) gin.HandlerFunc {
 	}
 }
 
-func GetLinkByIdHandler(linkRepo LinkRepository) gin.HandlerFunc {
+func GetLinksByUserIdHandler(linkRepo LinkRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userId := c.Param("user_id")
+		links, err := linkRepo.GetLinksByUserId(userId)
+		if err != nil {
+			// handle error
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to gather links"})
+			return
+		}
+		c.IndentedJSON(http.StatusOK, links)
+	}
+}
+
+func GetLinkByLinkIdHandler(linkRepo LinkRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		linkId := c.Param("link_id")
-		link, err := linkRepo.GetLinkById(linkId)
+		link, err := linkRepo.GetLinkByLinkId(linkId)
+		if err != nil {
+			// handle error
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to gather link"})
+			return
+		}
+		if link == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Link not found"})
+			return
+		}
+		c.IndentedJSON(http.StatusOK, link)
+	}
+}
+
+func GetLinkByUrlHandler(linkRepo LinkRepository) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		rawURL := c.Param("url")
+		url := strings.TrimPrefix(rawURL, "/") // To remove the leading slash
+		link, err := linkRepo.GetLinkByUrl(url)
 		if err != nil {
 			// handle error
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to gather link"})

@@ -37,14 +37,12 @@ func main() {
 	authorized.GET("/users", api.GetAllUsersHandler(env))
 	authorized.GET("/users/:phone_number", api.GetUserByPhoneNumberHandler(env))
 
-	// get links associated with a user
-	authorized.GET("/links/user/:user_id", api.GetUserLinksHandler(env))
-
 	// link routes
 	authorized.POST("/link", api.AddNewLinkHandler(env))
 	authorized.GET("/links", api.GetAllLinksHandler(env))
-	// get links with a specific id
-	authorized.GET("/links/id/:link_id", api.GetLinkByIdHandler(env))
+	authorized.GET("/links/user/:user_id", api.GetLinksByUserIdHandler(env))
+	authorized.GET("/links/id/:link_id", api.GetLinkByLinkIdHandler(env))
+	authorized.GET("/links/analyze/*url", api.GetLinkByUrlHandler(env))
 
 	router.Run(":8081") // maps to dockerfile, we are running the container on 8081
 }

@@ -91,34 +91,6 @@ func (env *Env) GetUserByPhoneNumber(phoneNumber string) (*models.User, error) {
 	return &u, nil
 }
 
-// find all links that a user has clicked on.
-func (env *Env) GetUserLinks(userId string) ([]models.Link, error) {
-	rows, err := env.DB.Query("SELECT id, user_id, url, clicked_at FROM links WHERE user_id = $1", userId)
-	if err != nil {
-		log.Println("Failed gather rows from table:", err)
-		return nil, err
-	}
-	defer rows.Close()
-
-	var links []models.Link
-	for rows.Next() {
-		var l models.Link
-		err := rows.Scan(&l.ID, &l.UserId, &l.Url, &l.ClickedAt)
-		if err != nil {
-			log.Println("Failed to scan link:", err)
-			continue // or return depending on how you want to handle errors
-		}
-		links = append(links, l)
-	}
-	// Check for errors from iterating over rows.
-	if err = rows.Err(); err != nil {
-		log.Println("Failed to iterate:", err)
-		return nil, err
-	}
-
-	return links, nil
-}
-
 // Updating user information.
 func (env *Env) UpdateUser() ([]models.User, error) {
 	return nil, nil
