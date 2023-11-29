@@ -8,6 +8,10 @@ docker:
 	@echo "Building Docker container..."
 	docker build -t phishhook .
 
+test: 
+	@echo "Running tests..."
+	go test ./... -v
+	
 # having the - before docker stop/rm will ignore any errors, like if the container is not running
 # the -p flag of docker build maps the host port to the container port
 # the -d flag of docker run runs the container in detached mode. i.e., in the background

@@ -7,8 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/phishhook/go-backend/internal/api"
-	"github.com/phishhook/go-backend/internal/pkg/database"
+	"github.com/phishhook/go-backend/config"
+	"github.com/phishhook/go-backend/links"
 )
 
 func init() {
@@ -19,12 +19,13 @@ func init() {
 }
 
 func main() {
-	env := new(database.Env)
-	var err error
-	env.DB, err = database.ConnectDB()
+	db, err := config.ConnectDB(os.Getenv("DATABASE_URL"))
 	if err != nil {
-		log.Fatalf("failed to start the server: %v", err)
+		log.Panic(err)
 	}
+	defer db.Close()
+
+	env := &config.Env{DB: db}
 
 	router := gin.Default()
 
@@ -32,17 +33,15 @@ func main() {
 	authorized := router.Group("/") // group is a subset of routes that share a common prefix or middleware
 	authorized.Use(ValidateApiKey())
 
-	// user routes
-	authorized.POST("/user", api.AddNewUserHandler(env))
-	authorized.GET("/users", api.GetAllUsersHandler(env))
-	authorized.GET("/users/:phone_number", api.GetUserByPhoneNumberHandler(env))
+	authorized.GET("/links", links.LinksIndex(env))
+	authorized.POST("/link", links.PostLink(env))
+	authorized.GET("/links/user/:user_id", links.GetLinksByUserID(env))
+	authorized.GET("/links/analyze/*url", links.GetLinkByUrl(env))
 
-	// link routes
-	authorized.POST("/link", api.AddNewLinkHandler(env))
-	authorized.GET("/links", api.GetAllLinksHandler(env))
-	authorized.GET("/links/user/:user_id", api.GetLinksByUserIdHandler(env))
-	authorized.GET("/links/id/:link_id", api.GetLinkByLinkIdHandler(env))
-	authorized.GET("/links/analyze/*url", api.GetLinkByUrlHandler(env))
+	// user routes
+	// authorized.POST("/user", api.AddNewUserHandler(env))
+	// authorized.GET("/users", api.GetAllUsersHandler(env))
+	// authorized.GET("/users/:phone_number", api.GetUserByPhoneNumberHandler(env))
 
 	router.Run(":8081") // maps to dockerfile, we are running the container on 8081
 }
