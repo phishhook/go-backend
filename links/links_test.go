@@ -120,4 +120,34 @@ func TestGetLinksByUserID(t *testing.T) {
 
 func TestGetLinkByUrl(t *testing.T) {
 	// Create a new mock database
+	db, mock := CreateMockDB(t)
+	defer db.Close()
+
+	// Set up mock rows
+	rows := sqlmock.NewRows([]string{"id", "user_id", "url", "clicked_at", "is_phishing", "percentage"}).
+		AddRow(1, 100, EXPECTED_URL, FIXED_TIME, "safe", "50.00")
+
+	// Expectations
+	mock.ExpectQuery("^SELECT (.+) FROM links WHERE url = \\$1$").
+		WithArgs(EXPECTED_URL). // Expect a string "1" instead of an integer 1
+		WillReturnRows(rows)
+
+	// Call LinksByUserId
+	link, err := LinkByUrl(db, EXPECTED_URL)
+	if err != nil {
+		t.Errorf("error was not expected while fetching links: %s", err)
+	}
+
+	// Assertions
+	expectedLinks := &Link{
+		ID: 1, UserId: 100, Url: EXPECTED_URL, ClickedAt: FIXED_TIME, IsPhishing: "safe", Percentage: "50.00",
+	}
+	if !reflect.DeepEqual(link, expectedLinks) {
+		t.Errorf("expected link %v, but got %v", expectedLinks, link)
+	}
+
+	// Ensure all expectations were met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf(ErrUnfilledExpectations, err)
+	}
 }

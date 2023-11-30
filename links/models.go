@@ -95,7 +95,7 @@ func LinksByUserId(db *sql.DB, userId string) ([]*Link, error) {
 // fetch the link that corresponds to the given link url
 func LinkByUrl(db *sql.DB, url string) (*Link, error) {
 	link := new(Link)
-	err := db.QueryRow("SELECT id, user_id, url, clicked_at, is_phishing FROM links WHERE url = $1", url).Scan(&link.ID, &link.UserId, &link.Url, &link.ClickedAt, &link.IsPhishing)
+	err := db.QueryRow("SELECT id, user_id, url, clicked_at, is_phishing FROM links WHERE url = $1", url).Scan(&link.ID, &link.UserId, &link.Url, &link.ClickedAt, &link.IsPhishing, &link.Percentage)
 	if err != nil {
 		log.Printf("Failed to get the link with id: %d. Error: %s", link.ID, err)
 		return nil, err
