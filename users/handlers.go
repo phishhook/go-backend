@@ -1,33 +1,26 @@
-package api
+package users
 
 import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/phishhook/go-backend/internal/pkg/database/models"
+	"github.com/phishhook/go-backend/config"
 )
 
-type UserRepository interface {
-	AddNewUser(phoneNumber, username string) (int, error)
-	GetAllUsers() ([]models.User, error)
-	GetUserByPhoneNumber(phoneNumber string) (*models.User, error)
-}
-
-func GetAllUsersHandler(userRepo UserRepository) gin.HandlerFunc {
+func UsersIndex(env *config.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		users, err := userRepo.GetAllUsers()
+		links, err := AllUsers(env.DB)
 		if err != nil {
-			// handle error
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to gather users"})
 			return
 		}
-		c.IndentedJSON(http.StatusOK, users)
+		c.IndentedJSON(http.StatusOK, links)
 	}
 }
 
-func AddNewUserHandler(userRepo UserRepository) gin.HandlerFunc {
+func PostUser(env *config.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var user models.User
+		var user User
 		if err := c.BindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -39,9 +32,8 @@ func AddNewUserHandler(userRepo UserRepository) gin.HandlerFunc {
 			return
 		}
 
-		id, err := userRepo.AddNewUser(user.PhoneNumber, user.Username)
+		id, err := AddNewUser(env.DB, user.PhoneNumber, user.Username, user.AnonymizeLinks)
 		if err != nil {
-			// handle error
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add user"})
 			return
 		}
@@ -49,10 +41,10 @@ func AddNewUserHandler(userRepo UserRepository) gin.HandlerFunc {
 	}
 }
 
-func GetUserByPhoneNumberHandler(userRepo UserRepository) gin.HandlerFunc {
+func GetUserByPhoneNumber(env *config.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		phoneNumber := c.Param("phone_number")
-		user, err := userRepo.GetUserByPhoneNumber(phoneNumber)
+		user, err := UserByPhoneNumber(env.DB, phoneNumber)
 		if err != nil {
 			// handle error
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to gather user"})

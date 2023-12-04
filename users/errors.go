@@ -1,8 +1,7 @@
-package errors
+package users
 
 import "fmt"
 
-// userRepo Errors
 type UserAlreadyExistsError struct {
 	PhoneNumber string
 }

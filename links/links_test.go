@@ -12,6 +12,7 @@ import (
 const (
 	EXPECTED_URL            = "http://example.com"
 	ErrUnfilledExpectations = "Error was not expected while fetching links: %s"
+	ErrFetchingLinks        = "error was not expected while fetching links: %s"
 )
 
 var FIXED_TIME = time.Now()
@@ -40,7 +41,7 @@ func TestLinksIndex(t *testing.T) {
 	// Call AllLinks
 	links, err := AllLinks(db)
 	if err != nil {
-		t.Errorf("error was not expected while fetching links: %s", err)
+		t.Errorf(ErrFetchingLinks, err)
 	}
 
 	// Assertions
@@ -101,7 +102,7 @@ func TestGetLinksByUserID(t *testing.T) {
 	// Call LinksByUserId
 	links, err := LinksByUserId(db, "1")
 	if err != nil {
-		t.Errorf("error was not expected while fetching links: %s", err)
+		t.Errorf(ErrFetchingLinks, err)
 	}
 
 	// Assertions
@@ -135,7 +136,7 @@ func TestGetLinkByUrl(t *testing.T) {
 	// Call LinksByUserId
 	link, err := LinkByUrl(db, EXPECTED_URL)
 	if err != nil {
-		t.Errorf("error was not expected while fetching links: %s", err)
+		t.Errorf(ErrFetchingLinks, err)
 	}
 
 	// Assertions

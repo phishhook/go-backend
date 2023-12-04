@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"time"
-
-	"github.com/phishhook/go-backend/internal/pkg/database/models"
 )
 
 type Link struct {
@@ -59,7 +57,7 @@ func AddNewLink(db *sql.DB, userId int, url, isPhishing, percentage string) (int
 		return 0, fmt.Errorf("percentage must be a 5 char string. Example: '50.00'")
 	}
 
-	var link models.Link
+	var link Link
 	err := db.QueryRow("INSERT INTO links (user_id, url, is_phishing, percentage) VALUES ($1, $2, $3, $4) RETURNING id", userId, url, isPhishing, percentage).Scan(&link.ID)
 	if err != nil {
 		log.Printf("Failed to add link: %s. Error: %s", url, err)

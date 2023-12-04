@@ -16,7 +16,8 @@ Used to add a link to persistent storage.
 {
   "user_id": "must be a valid user",
   "url": "none",
-  "is_phishing": "{safe || phishing || indeterminate}"
+  "is_phishing": "{safe || phishing || indeterminate}",
+  "percentage": "{4 digits}"
 }
 ```
 
@@ -26,7 +27,8 @@ Used to add a link to persistent storage.
 {
   "user_id": 1,
   "url": "example.com/test",
-  "is_phishing": "safe"
+  "is_phishing": "safe",
+  "percentage": "76.99"
 }
 ```
 
@@ -61,7 +63,8 @@ Used to get all links that are in our database.
         "user_id": 1,
         "url": "http://allfinanciercolombiasitematrasacional.replit.app/assets/css",
         "clicked_at": "2023-11-14T01:00:51.528726Z",
-        "is_phishing": "phishing"
+        "is_phishing": "phishing",
+        "percentage": "76.99"
     },
     ...
 ]
@@ -88,7 +91,8 @@ Fetch a link associated with a specific user.
         "user_id": 1,
         "url": "http://allfinanciercolombiasitematrasacional.replit.app/assets/css",
         "clicked_at": "2023-11-14T01:00:51.528726Z",
-        "is_phishing": "phishing"
+        "is_phishing": "phishing",
+        "percentage": "76.99"
     },
     ...
 ]
@@ -114,7 +118,8 @@ Fetch a link that has a specific id.
   "user_id": 1,
   "url": "example.com/test",
   "clicked_at": "2023-11-15T00:31:19.483548Z",
-  "is_phishing": "safe"
+  "is_phishing": "safe",
+  "percentage": "76.99"
 }
 ```
 
@@ -140,7 +145,8 @@ Check to see if a link already exists in our database.
   "user_id": 1,
   "url": "example.com/test",
   "clicked_at": "2023-11-15T00:31:19.483548Z",
-  "is_phishing": "safe"
+  "is_phishing": "safe",
+  "percentage": "76.99"
 }
 ```
 
