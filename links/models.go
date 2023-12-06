@@ -52,11 +52,6 @@ func AddNewLink(db *sql.DB, userId int, url, isPhishing, percentage string) (int
 		return 0, fmt.Errorf("isPhishing must be 'phishing', 'safe', or 'indeterminate'")
 	}
 
-	// Check that percentage is a valid 5 char string
-	if len(percentage) != 5 {
-		return 0, fmt.Errorf("percentage must be a 5 char string. Example: '50.00'")
-	}
-
 	var link Link
 	err := db.QueryRow("INSERT INTO links (user_id, url, is_phishing, percentage) VALUES ($1, $2, $3, $4) RETURNING id", userId, url, isPhishing, percentage).Scan(&link.ID)
 	if err != nil {
