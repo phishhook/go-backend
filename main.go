@@ -9,6 +9,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/phishhook/go-backend/config"
 	"github.com/phishhook/go-backend/links"
+	"github.com/phishhook/go-backend/users"
 )
 
 func init() {
@@ -33,15 +34,16 @@ func main() {
 	authorized := router.Group("/") // group is a subset of routes that share a common prefix or middleware
 	authorized.Use(ValidateApiKey())
 
+	// link routes
 	authorized.GET("/links", links.LinksIndex(env))
 	authorized.POST("/link", links.PostLink(env))
 	authorized.GET("/links/user/:user_id", links.GetLinksByUserID(env))
-	authorized.GET("/links/analyze/*url", links.GetLinkByUrl(env))
+	authorized.GET("/links/analyze", links.GetLinkByUrl(env))
 
 	// user routes
-	// authorized.POST("/user", api.AddNewUserHandler(env))
-	// authorized.GET("/users", api.GetAllUsersHandler(env))
-	// authorized.GET("/users/:phone_number", api.GetUserByPhoneNumberHandler(env))
+	authorized.GET("/users", users.UsersIndex(env))
+	authorized.POST("/user", users.PostUser(env))
+	authorized.GET("/users/:phone_number", users.GetUserByPhoneNumber(env))
 
 	router.Run(":8081") // maps to dockerfile, we are running the container on 8081
 }

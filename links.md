@@ -127,7 +127,7 @@ Fetch a link that has a specific id.
 
 Check to see if a link already exists in our database.
 
-**URL**: `/links/analyze/{link_url}`
+**URL**: `/links/analyze?url={https://example.com}`
 
 **Method**: `GET`
 
@@ -143,10 +143,11 @@ Check to see if a link already exists in our database.
 {
   "link_id": 11,
   "user_id": 1,
-  "url": "example.com/test",
+  "url": "example.com",
   "clicked_at": "2023-11-15T00:31:19.483548Z",
   "is_phishing": "safe",
-  "percentage": "76.99"
+  "percentage": "76.99",
+  "url_scheme": "https"
 }
 ```
 

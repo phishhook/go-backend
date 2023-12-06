@@ -2,6 +2,7 @@ package links
 
 import (
 	"database/sql"
+	"net/url"
 	"reflect"
 	"testing"
 	"time"
@@ -64,7 +65,7 @@ func TestPostLink(t *testing.T) {
 	defer db.Close()
 
 	mock.ExpectQuery("^INSERT INTO links (.+) VALUES (.+)$").
-		WithArgs(1, EXPECTED_URL, "safe", "50.00").               // Ensure these match the arguments in AddNewLink
+		WithArgs(1, EXPECTED_URL, "safe", "50.00", "http").       // Ensure these match the arguments in AddNewLink
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)) // Simulate RETURNING id
 
 	// Call AddNewLink
@@ -91,8 +92,8 @@ func TestGetLinksByUserID(t *testing.T) {
 	defer db.Close()
 
 	// Set up mock rows
-	rows := sqlmock.NewRows([]string{"id", "user_id", "url", "clicked_at", "is_phishing", "percentage"}).
-		AddRow(1, 100, EXPECTED_URL, FIXED_TIME, "safe", "50.00")
+	rows := sqlmock.NewRows([]string{"id", "user_id", "url", "clicked_at", "is_phishing", "percentage", "url_scheme"}).
+		AddRow(1, 100, EXPECTED_URL, FIXED_TIME, "safe", "50.00", "http")
 
 	// Expectations
 	mock.ExpectQuery("^SELECT (.+) FROM links WHERE user_id = \\$1$").
@@ -107,7 +108,7 @@ func TestGetLinksByUserID(t *testing.T) {
 
 	// Assertions
 	expectedLinks := []*Link{
-		{ID: 1, UserId: 100, Url: EXPECTED_URL, ClickedAt: FIXED_TIME, IsPhishing: "safe", Percentage: "50.00"},
+		{ID: 1, UserId: 100, Url: EXPECTED_URL, ClickedAt: FIXED_TIME, IsPhishing: "safe", Percentage: "50.00", UrlScheme: "http"},
 	}
 	if !reflect.DeepEqual(links, expectedLinks) {
 		t.Errorf("expected links %v, but got %v", expectedLinks, links)
@@ -124,13 +125,17 @@ func TestGetLinkByUrl(t *testing.T) {
 	db, mock := CreateMockDB(t)
 	defer db.Close()
 
+	parsedUrl, _ := url.Parse(EXPECTED_URL)
+	urlScheme := parsedUrl.Scheme
+	urlWithoutScheme := parsedUrl.Host + parsedUrl.Path
+
 	// Set up mock rows
-	rows := sqlmock.NewRows([]string{"id", "user_id", "url", "clicked_at", "is_phishing", "percentage"}).
-		AddRow(1, 100, EXPECTED_URL, FIXED_TIME, "safe", "50.00")
+	rows := sqlmock.NewRows([]string{"id", "user_id", "url", "clicked_at", "is_phishing", "percentage", "url_scheme"}).
+		AddRow(1, 100, urlWithoutScheme, FIXED_TIME, "safe", "50.00", "http")
 
 	// Expectations
-	mock.ExpectQuery("^SELECT (.+) FROM links WHERE url = \\$1$").
-		WithArgs(EXPECTED_URL). // Expect a string "1" instead of an integer 1
+	mock.ExpectQuery("^SELECT (.+) FROM links WHERE url = \\$1 AND url_scheme = \\$2").
+		WithArgs(urlWithoutScheme, urlScheme). // Expect a string "1" instead of an integer 1
 		WillReturnRows(rows)
 
 	// Call LinksByUserId
@@ -141,7 +146,7 @@ func TestGetLinkByUrl(t *testing.T) {
 
 	// Assertions
 	expectedLinks := &Link{
-		ID: 1, UserId: 100, Url: EXPECTED_URL, ClickedAt: FIXED_TIME, IsPhishing: "safe", Percentage: "50.00",
+		ID: 1, UserId: 100, Url: urlWithoutScheme, ClickedAt: FIXED_TIME, IsPhishing: "safe", Percentage: "50.00", UrlScheme: "http",
 	}
 	if !reflect.DeepEqual(link, expectedLinks) {
 		t.Errorf("expected link %v, but got %v", expectedLinks, link)

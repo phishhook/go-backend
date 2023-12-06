@@ -71,7 +71,7 @@ func GetLinksByUserID(env *config.Env) gin.HandlerFunc {
 
 func GetLinkByUrl(env *config.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		rawURL := c.Param("url")
+		rawURL := c.Query("url")
 		url := strings.TrimPrefix(rawURL, "/") // To remove the leading slash
 		link, err := LinkByUrl(env.DB, url)
 		if err != nil {

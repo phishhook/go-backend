@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/url"
 	"time"
 )
 
@@ -11,6 +12,7 @@ type Link struct {
 	ID         int       `json:"link_id,omitempty"`
 	UserId     int       `json:"user_id"`
 	Url        string    `json:"url"`
+	UrlScheme  string    `json:"url_scheme"`
 	ClickedAt  time.Time `json:"clicked_at"`
 	IsPhishing string    `json:"is_phishing"`
 	Percentage string    `json:"percentage"`
@@ -39,7 +41,7 @@ func AllLinks(db *sql.DB) ([]*Link, error) {
 }
 
 // add a new link
-func AddNewLink(db *sql.DB, userId int, url, isPhishing, percentage string) (int, error) {
+func AddNewLink(db *sql.DB, userId int, inputURL, isPhishing, percentage string) (int, error) {
 	// Define valid statuses
 	validStatuses := map[string]bool{
 		"phishing":      true,
@@ -52,10 +54,17 @@ func AddNewLink(db *sql.DB, userId int, url, isPhishing, percentage string) (int
 		return 0, fmt.Errorf("isPhishing must be 'phishing', 'safe', or 'indeterminate'")
 	}
 
-	var link Link
-	err := db.QueryRow("INSERT INTO links (user_id, url, is_phishing, percentage) VALUES ($1, $2, $3, $4) RETURNING id", userId, url, isPhishing, percentage).Scan(&link.ID)
+	// parse out the http or https
+	parsedUrl, err := url.Parse(inputURL)
 	if err != nil {
-		log.Printf("Failed to add link: %s. Error: %s", url, err)
+		return 0, err // return an empty string and the error
+	}
+	urlScheme := parsedUrl.Scheme
+
+	var link Link
+	err = db.QueryRow("INSERT INTO links (user_id, url, is_phishing, percentage, url_scheme) VALUES ($1, $2, $3, $4, %5) RETURNING id", userId, inputURL, isPhishing, percentage, urlScheme).Scan(&link.ID)
+	if err != nil {
+		log.Printf("Failed to add link: %s. Error: %s", inputURL, err)
 		return 0, err
 	}
 
@@ -64,7 +73,7 @@ func AddNewLink(db *sql.DB, userId int, url, isPhishing, percentage string) (int
 
 // fetch all links for a specific user id
 func LinksByUserId(db *sql.DB, userId string) ([]*Link, error) {
-	rows, err := db.Query("SELECT id, user_id, url, clicked_at, is_phishing, percentage FROM links WHERE user_id = $1", userId)
+	rows, err := db.Query("SELECT id, user_id, url, clicked_at, is_phishing, percentage, url_scheme FROM links WHERE user_id = $1", userId)
 	if err != nil {
 		log.Println("Failed gather rows from users table:", err)
 		return nil, err
@@ -74,7 +83,7 @@ func LinksByUserId(db *sql.DB, userId string) ([]*Link, error) {
 	links := make([]*Link, 0)
 	for rows.Next() {
 		l := new(Link)
-		err := rows.Scan(&l.ID, &l.UserId, &l.Url, &l.ClickedAt, &l.IsPhishing, &l.Percentage)
+		err := rows.Scan(&l.ID, &l.UserId, &l.Url, &l.ClickedAt, &l.IsPhishing, &l.Percentage, &l.UrlScheme)
 		if err != nil {
 			log.Println("Failed to scan link:", err)
 			return nil, err
@@ -86,11 +95,21 @@ func LinksByUserId(db *sql.DB, userId string) ([]*Link, error) {
 }
 
 // fetch the link that corresponds to the given link url
-func LinkByUrl(db *sql.DB, url string) (*Link, error) {
+func LinkByUrl(db *sql.DB, inputURL string) (*Link, error) {
 	link := new(Link)
-	err := db.QueryRow("SELECT id, user_id, url, clicked_at, is_phishing FROM links WHERE url = $1", url).Scan(&link.ID, &link.UserId, &link.Url, &link.ClickedAt, &link.IsPhishing, &link.Percentage)
+
+	// parse out the http or https
+	parsedUrl, err := url.Parse(inputURL)
 	if err != nil {
-		log.Printf("Failed to get the link with id: %d. Error: %s", link.ID, err)
+		log.Println("Failed to parse link:", err)
+		return nil, err
+	}
+	urlScheme := parsedUrl.Scheme
+	urlWithoutScheme := parsedUrl.Host + parsedUrl.Path
+
+	err = db.QueryRow("SELECT id, user_id, url, url_scheme, clicked_at, is_phishing, percentage FROM links WHERE url = $1 AND url_scheme = $2", urlWithoutScheme, urlScheme).Scan(&link.ID, &link.UserId, &link.Url, &link.UrlScheme, &link.ClickedAt, &link.IsPhishing, &link.Percentage)
+	if err != nil {
+		log.Printf("Failed to get the link with url: %s and urlScheme: %s. Error: %s", urlWithoutScheme, urlScheme, err)
 		return nil, err
 	}
 	return link, nil
